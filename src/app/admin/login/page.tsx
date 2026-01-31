@@ -16,6 +16,7 @@ export default function AdminLogin() {
         setLoading(true);
 
         try {
+            console.log("Tentando login com:", username);
             const { data, error } = await supabase
                 .from('admins')
                 .select('*')
@@ -23,18 +24,30 @@ export default function AdminLogin() {
                 .eq('password', password)
                 .single();
 
-            if (error || !data) {
+            console.log("Supabase response:", { data, error });
+
+            if (error) {
+                console.error("Erro Supabase:", error);
+                setError(`Erro: ${error.message} (${error.code})`);
+                setLoading(false);
+                return;
+            }
+
+            if (!data) {
+                console.warn("Nenhum dado retornado");
                 setError("Usuário ou senha incorretos");
                 setLoading(false);
                 return;
             }
 
             // Login successful
+            console.log("Login sucesso, redirecionando...");
             localStorage.setItem("admin_logged_in", "true");
             window.location.href = "/admin/dashboard";
 
-        } catch (err) {
-            setError("Ocorreu um erro ao tentar entrar");
+        } catch (err: any) {
+            console.error("Erro inesperado:", err);
+            setError(`Erro inesperado: ${err.message || err}`);
             setLoading(false);
         }
     }
