@@ -38,11 +38,11 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser();
 
-    if (request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login") && !user) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/admin/login";
-        return NextResponse.redirect(url);
-    }
+    // if (request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login") && !user) {
+    //     const url = request.nextUrl.clone();
+    //     url.pathname = "/admin/login";
+    //     return NextResponse.redirect(url);
+    // }
 
     return supabaseResponse;
 }
