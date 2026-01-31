@@ -1,12 +1,21 @@
+import { supabase } from "@/lib/supabase";
+
 export type Category = {
     id: string;
     name: string;
     slug: string;
 };
 
-export const categories: Category[] = [
-    { id: "1", name: "Móveis", slug: "moveis" },
-    { id: "2", name: "Iluminação", slug: "iluminacao" },
-    { id: "3", name: "Decoração", slug: "decoracao" },
-    { id: "4", name: "Organização", slug: "organizacao" },
-];
+export async function getCategories(): Promise<Category[]> {
+    const { data, error } = await supabase
+        .from('categories')
+        .select('*');
+
+    if (error) {
+        console.error('Error fetching categories:', error);
+        return [];
+    }
+
+    return data as Category[];
+}
+

@@ -14,15 +14,21 @@ import {
     SheetContent,
     SheetTrigger,
 } from "@/components/ui/sheet";
-import { categories } from "@/data/categories";
+import { Category, getCategories } from "@/data/categories";
 import { ChevronDown, Menu } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { User } from "lucide-react";
 import CartSidebar from "./CartSidebar";
 
 export default function Navbar() {
     const pathname = usePathname();
+    const [categories, setCategories] = useState<Category[]>([]);
+
+    useEffect(() => {
+        getCategories().then(setCategories);
+    }, []);
 
     if (pathname?.startsWith("/admin")) {
         return null;
@@ -128,3 +134,4 @@ export default function Navbar() {
         </header>
     );
 }
+

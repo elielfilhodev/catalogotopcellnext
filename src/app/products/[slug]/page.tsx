@@ -8,7 +8,7 @@ type Props = {
 export default async function ProductPage({ params }: Props) {
     const resolved = await params;
     const slug: string = resolved?.slug;
-    const product = getProductBySlug(slug);
+    const product = await getProductBySlug(slug);
 
     if (!product) {
         return (

@@ -17,12 +17,19 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { products } from "@/data/products";
+import { getProducts, Product } from "@/data/products";
 import { MoreHorizontal, Plus, Search } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export default function AdminProductsPage() {
+    const [products, setProducts] = useState<Product[]>([]);
+
+    useEffect(() => {
+        getProducts().then(setProducts);
+    }, []);
+
     return (
         <div className="p-6 space-y-6">
             <div className="flex items-center justify-between gap-4">
@@ -141,3 +148,4 @@ export default function AdminProductsPage() {
         </div>
     );
 }
+
