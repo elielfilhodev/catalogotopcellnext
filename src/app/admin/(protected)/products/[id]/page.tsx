@@ -119,17 +119,30 @@ export default function ProductFormPage() {
             console.log("Saving product data:", productData); // Debug log
 
             let error;
+            let data;
+
             if (isEditing) {
-                const { error: updateError } = await supabase
+                const response = await supabase
                     .from('products')
                     .update(productData)
-                    .eq('id', productId);
-                error = updateError;
+                    .eq('id', productId)
+                    .select();
+                error = response.error;
+                data = response.data;
             } else {
-                const { error: insertError } = await supabase
+                const response = await supabase
                     .from('products')
-                    .insert(productData);
-                error = insertError;
+                    .insert(productData)
+                    .select();
+                error = response.error;
+                data = response.data;
+            }
+
+            console.log("Supabase operation result:", { data, error }); // CRITICAL DEBUG LOG
+
+            if (error) {
+                console.error("Detailed Supabase Error:", error);
+                throw error;
             }
 
             if (error) throw error;
