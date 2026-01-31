@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect fill="#e4e4e7" width="400" height="400"/>
+  <circle cx="200" cy="120" r="60" fill="#fbbf24"/>
+  <path d="M 200 180 L 180 250 M 200 180 L 220 250" stroke="#9ca3af" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="180" cy="260" r="8" fill="#9ca3af"/>
+  <circle cx="220" cy="260" r="8" fill="#9ca3af"/>
+  <text x="200" y="320" font-size="24" text-anchor="middle" fill="#71717a" font-family="sans-serif">Luminária</text>
+</svg>

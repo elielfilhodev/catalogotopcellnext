@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect fill="#e4e4e7" width="400" height="400"/>
+  <rect x="100" y="80" width="200" height="200" rx="10" fill="#9ca3af"/>
+  <rect x="120" y="100" width="160" height="160" fill="#e4e4e7"/>
+  <text x="200" y="320" font-size="24" text-anchor="middle" fill="#71717a" font-family="sans-serif">Cadeira Alt</text>
+</svg>
