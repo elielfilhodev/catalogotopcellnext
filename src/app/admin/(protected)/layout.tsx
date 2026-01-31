@@ -1,3 +1,4 @@
+import AdminAuthGuard from "@/components/AdminAuthGuard"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { cookies } from "next/headers"
@@ -8,10 +9,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar />
-      <main className="w-full">
-        {children}
-      </main>
+      <AdminAuthGuard>
+        <AppSidebar />
+        <main className="w-full">
+          {children}
+        </main>
+      </AdminAuthGuard>
     </SidebarProvider>
   )
 }
