@@ -111,10 +111,12 @@ export default function ProductFormPage() {
                 price: parseFloat(price),
                 promo_price: promoPrice ? parseFloat(promoPrice) : null,
                 images: images,
-                category_id: categoryId || null,
+                category_id: categoryId && categoryId !== "" ? categoryId : null,
                 active,
                 featured
             };
+
+            console.log("Saving product data:", productData); // Debug log
 
             let error;
             if (isEditing) {

@@ -22,6 +22,9 @@ export async function getProducts(): Promise<Product[]> {
         return [];
     }
 
+    console.log("Fetched products count:", data?.length); // Debug log
+
+
     return data.map((p: any) => ({
         id: p.id,
         title: p.title,
