@@ -1,50 +1,80 @@
 "use client";
-
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function AdminLogin() {
     const router = useRouter();
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    function submit(e: React.FormEvent) {
+    async function submit(e: React.FormEvent) {
         e.preventDefault();
         setError("");
         setLoading(true);
 
-        // Simulate network delay
-        setTimeout(() => {
-            if (password === "admin") {
-                localStorage.setItem("admin_logged_in", "true");
-                // Using window.location to ensure full page refresh and state reset
-                window.location.href = "/admin/dashboard";
-            } else {
-                setError("Senha incorreta");
+        try {
+            const { data, error } = await supabase
+                .from('admins')
+                .select('*')
+                .eq('username', username)
+                .eq('password', password)
+                .single();
+
+            if (error || !data) {
+                setError("Usuário ou senha incorretos");
                 setLoading(false);
+                return;
             }
-        }, 500);
+
+            // Login successful
+            localStorage.setItem("admin_logged_in", "true");
+            window.location.href = "/admin/dashboard";
+
+        } catch (err) {
+            setError("Ocorreu um erro ao tentar entrar");
+            setLoading(false);
+        }
     }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-black">
             <form onSubmit={submit} className="w-full max-w-sm rounded-md bg-white p-6 shadow-sm">
                 <h2 className="mb-4 text-lg font-semibold">Login Admin</h2>
-                <input
-                    type="password"
-                    placeholder="Senha"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-md border p-2 mb-2"
-                    disabled={loading}
-                />
-                {error && <div className="mb-2 text-sm text-rose-600">{error}</div>}
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-sm font-medium">Usuário</label>
+                        <input
+                            type="text"
+                            placeholder="Usuário"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="w-full rounded-md border p-2 mt-1"
+                            disabled={loading}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium">Senha</label>
+                        <input
+                            type="password"
+                            placeholder="Senha"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full rounded-md border p-2 mt-1"
+                            disabled={loading}
+                        />
+                    </div>
+                </div>
+
+                {error && <div className="mt-4 text-sm text-rose-600">{error}</div>}
+
                 <button
                     disabled={loading}
-                    className="mt-4 w-full rounded-md bg-foreground px-4 py-2 text-background disabled:opacity-50"
+                    className="mt-6 w-full rounded-md bg-foreground px-4 py-2 text-background disabled:opacity-50"
                 >
-                    {loading ? "Entrando..." : "Entrar"}
+                    {loading ? "Verificando..." : "Entrar"}
                 </button>
             </form>
         </div>
