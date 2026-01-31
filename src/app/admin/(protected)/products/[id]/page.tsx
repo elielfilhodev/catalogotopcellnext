@@ -4,19 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Category, getCategories } from "@/data/categories";
-import { ChevronLeft } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { ChevronLeft, X } from "lucide-react";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
-
 export default function ProductFormPage() {
     const router = useRouter();
+    const params = useParams();
+    const productId = params?.id as string;
+    const isEditing = productId && productId !== 'new';
+
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -29,19 +33,67 @@ export default function ProductFormPage() {
     const [categoryId, setCategoryId] = useState("");
     const [active, setActive] = useState(true);
     const [featured, setFeatured] = useState(false);
-    const [image, setImage] = useState(""); // Simplified for now (URL string)
+
+    // Image state
+    const [images, setImages] = useState<string[]>([]);
+    const [newImageUrl, setNewImageUrl] = useState("");
+
+    const handleAddImage = () => {
+        if (!newImageUrl) return;
+        setImages([...images, newImageUrl]);
+        setNewImageUrl("");
+    };
+
+    const handleRemoveImage = (indexToRemove: number) => {
+        setImages(images.filter((_, index) => index !== indexToRemove));
+    };
 
     useEffect(() => {
         getCategories().then(setCategories);
     }, []);
 
-    // Auto-generate slug from title
+    // Fetch product data if editing
     useEffect(() => {
-        if (title) {
+        if (isEditing) {
+            setLoading(true);
+            const fetchProduct = async () => {
+                const { data, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .eq('id', productId)
+                    .single();
+
+                if (error) {
+                    console.error("Erro ao buscar produto:", error);
+                    toast.error("Erro ao carregar produto.");
+                    setLoading(false);
+                    return;
+                }
+
+                if (data) {
+                    setTitle(data.title);
+                    setSlug(data.slug);
+                    setDescription(data.description || "");
+                    setPrice(data.price.toString());
+                    setPromoPrice(data.promo_price ? data.promo_price.toString() : "");
+                    setCategoryId(data.category_id || "");
+                    setActive(data.active);
+                    setFeatured(data.featured);
+                    setImages(data.images || []);
+                }
+                setLoading(false);
+            };
+            fetchProduct();
+        }
+    }, [isEditing, productId]);
+
+    // Auto-generate slug from title ONLY if creating new
+    useEffect(() => {
+        if (!isEditing && title) {
             const generatedSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
             setSlug(generatedSlug);
         }
-    }, [title]);
+    }, [title, isEditing]);
 
     const handleSave = async () => {
         if (!title || !slug || !price) {
@@ -58,17 +110,29 @@ export default function ProductFormPage() {
                 description,
                 price: parseFloat(price),
                 promo_price: promoPrice ? parseFloat(promoPrice) : null,
-                images: image ? [image] : [],
-                // category_id: categoryId || null, // Not saving category yet as we need to match UUIDs properly, let's stick to basic fields first
+                images: images,
+                category_id: categoryId || null,
                 active,
                 featured
             };
 
-            const { error } = await supabase.from('products').insert(productData);
+            let error;
+            if (isEditing) {
+                const { error: updateError } = await supabase
+                    .from('products')
+                    .update(productData)
+                    .eq('id', productId);
+                error = updateError;
+            } else {
+                const { error: insertError } = await supabase
+                    .from('products')
+                    .insert(productData);
+                error = insertError;
+            }
 
             if (error) throw error;
 
-            toast.success("Produto criado com sucesso!");
+            toast.success(`Produto ${isEditing ? 'atualizado' : 'criado'} com sucesso!`);
             router.push("/admin/products");
 
         } catch (error: any) {
@@ -88,15 +152,15 @@ export default function ProductFormPage() {
                     </Link>
                 </Button>
                 <div className="flex-1">
-                    <h1 className="text-2xl font-bold tracking-tight">Novo Produto</h1>
-                    <p className="text-sm text-muted-foreground">Preencha os dados do produto.</p>
+                    <h1 className="text-2xl font-bold tracking-tight">{isEditing ? 'Editar Produto' : 'Novo Produto'}</h1>
+                    <p className="text-sm text-muted-foreground">{isEditing ? 'Edite os dados do produto.' : 'Preencha os dados do produto.'}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" asChild disabled={loading}>
                         <Link href="/admin/products">Cancelar</Link>
                     </Button>
                     <Button onClick={handleSave} disabled={loading}>
-                        {loading ? "Salvando..." : "Criar Produto"}
+                        {loading ? "Salvando..." : (isEditing ? "Salvar Alterações" : "Criar Produto")}
                     </Button>
                 </div>
             </div>
@@ -121,10 +185,42 @@ export default function ProductFormPage() {
                                 <Label htmlFor="description">Descrição Completa</Label>
                                 <Textarea id="description" value={description} onChange={e => setDescription(e.target.value)} className="min-h-[150px]" placeholder="Descreva os detalhes..." />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="image">URL da Imagem (Temporário)</Label>
-                                <Input id="image" value={image} onChange={e => setImage(e.target.value)} placeholder="http://exemplo.com/imagem.jpg" />
-                                <p className="text-xs text-muted-foreground">Para teste, cole uma URL de imagem externa.</p>
+                            <div className="space-y-4">
+                                <Label>Imagens do Produto</Label>
+
+                                <div className="flex gap-2">
+                                    <Input
+                                        value={newImageUrl}
+                                        onChange={e => setNewImageUrl(e.target.value)}
+                                        placeholder="http://exemplo.com/imagem.jpg"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handleAddImage();
+                                            }
+                                        }}
+                                    />
+                                    <Button type="button" onClick={handleAddImage} variant="secondary">Adicionar</Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">Cole a URL da imagem e clique em Adicionar.</p>
+
+                                {images.length > 0 && (
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                        {images.map((img, index) => (
+                                            <div key={index} className="relative group border rounded-lg overflow-hidden aspect-square bg-muted">
+                                                <img src={img} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveImage(index)}
+                                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    title="Remover imagem"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -152,7 +248,19 @@ export default function ProductFormPage() {
                             <CardTitle>Organização</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {/* Category Select Logic Omitted for simplicity/UUID mismatch prevetion in this step */}
+                            <div className="space-y-2">
+                                <Label>Categoria</Label>
+                                <Select value={categoryId} onValueChange={setCategoryId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {categories.map((cat) => (
+                                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
                             <div className="flex items-center justify-between rounded-lg border p-3">
                                 <div className="space-y-0.5">
